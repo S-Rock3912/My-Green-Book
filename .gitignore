@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (機密情報 - コミットしない)
+.env.local
+.env*.local
+
+# Editor
+.DS_Store
+.claude/
+
+# Logs
+*.log
