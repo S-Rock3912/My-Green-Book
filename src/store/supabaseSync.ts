@@ -33,6 +33,9 @@ interface AppData {
   holes: Hole[];
 }
 
+// Green Book用のキーサフィックス (Yardage Bookとの競合防止)
+const GREEN_BOOK_SUFFIX = ':green';
+
 // ── Load ─────────────────────────────────────────────────────────────────────
 export async function loadStateFromSupabase(userId: string): Promise<AppData | null> {
   if (!isSupabaseConfigured || !supabase) return null;
@@ -41,11 +44,10 @@ export async function loadStateFromSupabase(userId: string): Promise<AppData | n
   const { data, error } = await supabase
     .from('user_state')
     .select('state_json')
-    .eq('user_id', userId)
+    .eq('user_id', userId + GREEN_BOOK_SUFFIX)
     .single();
 
   if (error || !data) {
-    // PGRST116 = row not found (まだ保存したことがない)
     setStatus('idle');
     return null;
   }
@@ -69,7 +71,7 @@ export async function saveStateToSupabase(
   setStatus('saving');
   const { error } = await supabase.from('user_state').upsert(
     {
-      user_id: userId,
+      user_id: userId + GREEN_BOOK_SUFFIX,
       state_json: { courses, holes },
       updated_at: new Date().toISOString(),
     },
@@ -88,4 +90,37 @@ export function debouncedSave(userId: string, courses: Course[], holes: Hole[]):
   saveTimer = setTimeout(() => {
     saveStateToSupabase(userId, courses, holes);
   }, 1500);
+}
+
+// ── Yardage Book データ読み込み (インポート用) ─────────────────────────────────
+interface YardageBookHole {
+  id: string;
+  courseId: string;
+  number: number;
+  greenImageDataUrl: string | null;
+  greenDrawingShapes: unknown[];
+  [key: string]: unknown; // Yardage Book固有のフィールドは無視
+}
+
+interface YardageBookData {
+  courses: Course[];
+  holes: YardageBookHole[];
+}
+
+export async function loadYardageBookData(userId: string): Promise<YardageBookData | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  const { data, error } = await supabase
+    .from('user_state')
+    .select('state_json')
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !data) return null;
+
+  const state = data.state_json as YardageBookData;
+  return {
+    courses: state.courses ?? [],
+    holes: state.holes ?? [],
+  };
 }

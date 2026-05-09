@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Book, Cloud, CloudOff, Loader2, LogOut } from 'lucide-react';
+import { Plus, Book, Cloud, CloudOff, Loader2, LogOut, Download } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { CourseCard } from '../components/course/CourseCard';
 import { CourseFormModal } from '../components/course/CourseFormModal';
+import { ImportModal } from '../components/import/ImportModal';
 import { Button } from '../components/ui/Button';
 import { useStore } from '../store/useStore';
 import { useSyncStatus } from '../store/supabaseSync';
@@ -75,6 +76,7 @@ const LogoutButton: React.FC = () => {
 export const Home: React.FC = () => {
   const { courses, addCourse, updateCourse, deleteCourse, getCourseHoles } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Course | null>(null);
 
   const handleEdit = (course: Course) => {
@@ -98,6 +100,16 @@ export const Home: React.FC = () => {
         actions={
           <>
             <SyncBadge />
+            {isSupabaseConfigured && (
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<Download size={14} />}
+                onClick={() => setImportOpen(true)}
+              >
+                インポート
+              </Button>
+            )}
             <Button
               size="sm"
               variant="gold"
@@ -132,6 +144,11 @@ export const Home: React.FC = () => {
         onClose={() => { setModalOpen(false); setEditTarget(null); }}
         onSave={handleSave}
         initial={editTarget}
+      />
+
+      <ImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
       />
     </div>
   );

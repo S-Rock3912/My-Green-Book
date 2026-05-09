@@ -22,6 +22,8 @@ interface AppState {
   updateGreenDrawing: (id: string, shapes: DrawingShape[]) => void;
   updateGreenImage: (id: string, dataUrl: string | null) => void;
 
+  importCourseFromYardageBook: (course: Course, holes: { number: number; greenImageDataUrl: string | null; greenDrawingShapes: DrawingShape[] }[]) => void;
+
   loadFromSupabase: (data: { courses: Course[]; holes: Hole[] }) => void;
 
   getCourse: (id: string) => Course | undefined;
@@ -90,6 +92,28 @@ export const useStore = create<AppState>()(
         set((s) => ({
           holes: s.holes.map((h) => (h.id === id ? { ...h, greenImageDataUrl: dataUrl } : h)),
         })),
+
+      importCourseFromYardageBook: (course, holeData) => {
+        const now = new Date().toISOString();
+        const newCourse: Course = {
+          id: uuidv4(),
+          name: course.name,
+          location: course.location,
+          createdAt: now,
+          updatedAt: now,
+        };
+        const newHoles: Hole[] = holeData.map((h) => ({
+          id: uuidv4(),
+          courseId: newCourse.id,
+          number: h.number,
+          greenImageDataUrl: h.greenImageDataUrl,
+          greenDrawingShapes: (h.greenDrawingShapes ?? []) as DrawingShape[],
+        }));
+        set((s) => ({
+          courses: [...s.courses, newCourse],
+          holes: [...s.holes, ...newHoles],
+        }));
+      },
 
       loadFromSupabase: (data) =>
         set({ courses: data.courses, holes: data.holes }),
